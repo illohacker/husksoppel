@@ -58,7 +58,7 @@ export default function Home() {
       setSelectedAddress(addr)
       setQuery(addr.text)
     }
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if ('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('husksoppel-push')) {
       setNotificationsEnabled(true)
     }
   }, [])
@@ -75,12 +75,6 @@ export default function Home() {
       .catch(() => setCollections([]))
       .finally(() => setLoading(false))
   }, [selectedAddress])
-
-  // Schedule notifications when collections change
-  useEffect(() => {
-    if (!notificationsEnabled || collections.length === 0) return
-    scheduleNotifications(collections)
-  }, [notificationsEnabled, collections])
 
   const searchAddress = useCallback((q: string) => {
     if (q.length < 2) {
@@ -121,36 +115,52 @@ export default function Home() {
   }
 
   async function enableNotifications() {
-    if (!('Notification' in window)) {
-      setNotificationStatus('Nettleseren din støtter ikke varsler.')
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setNotificationStatus('Nettleseren din støtter ikke push-varsler.')
       return
     }
-    if (!('serviceWorker' in navigator)) {
-      setNotificationStatus('Service Worker er ikke støttet.')
+    if (!selectedAddress) {
+      setNotificationStatus('Velg en adresse først.')
       return
     }
 
     const permission = await Notification.requestPermission()
-    if (permission === 'granted') {
-      await navigator.serviceWorker.register('/sw.js')
-      setNotificationsEnabled(true)
-      setNotificationStatus('Varsler er aktivert!')
-      if (collections.length > 0) {
-        scheduleNotifications(collections)
-      }
-    } else {
+    if (permission !== 'granted') {
       setNotificationStatus('Du må tillate varsler for å bruke denne funksjonen.')
+      return
     }
-  }
 
-  function scheduleNotifications(cols: WasteCollection[]) {
-    if (!('serviceWorker' in navigator)) return
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.active?.postMessage({
-        type: 'SCHEDULE',
-        collections: cols,
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.ready
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       })
-    })
+
+      // Send subscription to our backend
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: sub.toJSON(),
+          addressId: selectedAddress.id,
+          addressText: selectedAddress.text,
+        }),
+      })
+
+      if (res.ok) {
+        setNotificationsEnabled(true)
+        setNotificationStatus('Varsler er aktivert!')
+        localStorage.setItem('husksoppel-push', 'true')
+      } else {
+        setNotificationStatus('Kunne ikke lagre varsling. Prøv igjen.')
+      }
+    } catch (err) {
+      console.error('Push subscription error:', err)
+      setNotificationStatus('Noe gikk galt. Prøv igjen.')
+    }
   }
 
   return (
