@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { AddressSuggestion, WasteCollection } from './_lib/types'
 import { WASTE_ICONS, WASTE_COLORS } from './_lib/types'
+import { track } from './_lib/track'
 
 function parseDate(dateStr: string): Date {
   const clean = dateStr.replace(/\//g, '.')
@@ -53,8 +54,9 @@ export default function Home() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load saved address and detect platform
   useEffect(() => {
+    track({ event: 'pageview' })
+
     const saved = localStorage.getItem('husksoppel-address')
     if (saved) {
       const addr = JSON.parse(saved)
@@ -65,18 +67,15 @@ export default function Home() {
       setNotificationsEnabled(true)
     }
 
-    // Detect iOS
     const ua = navigator.userAgent
     const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     setIsIOS(ios)
 
-    // Detect if running as installed PWA
     const standalone = window.matchMedia('(display-mode: standalone)').matches
       || (navigator as unknown as { standalone?: boolean }).standalone === true
     setIsStandalone(standalone)
   }, [])
 
-  // Fetch calendar when address is selected
   useEffect(() => {
     if (!selectedAddress) return
     setLoading(true)
@@ -128,7 +127,6 @@ export default function Home() {
   }
 
   async function enableNotifications() {
-    // On iOS, must be installed as PWA first
     if (isIOS && !isStandalone) {
       setShowInstallGuide(true)
       return
@@ -158,7 +156,6 @@ export default function Home() {
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       })
 
-      // Send subscription to our backend
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,6 +170,7 @@ export default function Home() {
         setNotificationsEnabled(true)
         setNotificationStatus('Varsler er aktivert!')
         localStorage.setItem('husksoppel-push', 'true')
+        track({ event: 'subscribe' })
       } else {
         setNotificationStatus('Kunne ikke lagre varsling. Prøv igjen.')
       }
@@ -185,18 +183,22 @@ export default function Home() {
   return (
     <main className="flex-1 flex flex-col">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-4 py-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">HuskSøppel</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Aldri glem søppelhentingen igjen
-        </p>
+      <header className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white px-4 py-8 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="relative">
+          <img src="/logo.svg" alt="HuskSøppel" className="w-16 h-16 mx-auto mb-3" />
+          <h1 className="text-3xl font-bold tracking-tight">HuskSøppel</h1>
+          <p className="text-emerald-100 text-sm mt-1">
+            Vi passer på at du aldri glemmer søpla igjen
+          </p>
+        </div>
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
         {/* Address search */}
         <div className="relative">
           <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-2">
-            Skriv inn adressen din
+            Hvor bor du?
           </label>
           <div className="relative">
             <input
@@ -206,8 +208,8 @@ export default function Home() {
               value={query}
               onChange={(e) => handleInput(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder="F.eks. Eidemsbakken 27B"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-base"
+              placeholder="F.eks. Tucalle 123"
+              className="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base"
               autoComplete="off"
             />
             {selectedAddress && (
@@ -221,14 +223,13 @@ export default function Home() {
             )}
           </div>
 
-          {/* Suggestions dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+            <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
               {suggestions.map((s) => (
                 <li key={s.id}>
                   <button
                     onClick={() => selectAddress(s)}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors border-b border-slate-100 last:border-b-0"
                   >
                     {s.text}
                   </button>
@@ -241,7 +242,7 @@ export default function Home() {
         {/* Loading */}
         {loading && (
           <div className="mt-8 text-center text-slate-500">
-            <div className="inline-block w-6 h-6 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" />
+            <div className="inline-block w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
             <p className="mt-2 text-sm">Henter hentekalender…</p>
           </div>
         )}
@@ -261,7 +262,7 @@ export default function Home() {
                   key={i}
                   className={`rounded-2xl border p-4 shadow-sm transition-all ${
                     isUrgent
-                      ? 'border-amber-300 bg-amber-50'
+                      ? 'border-amber-300 bg-amber-50 ring-1 ring-amber-200'
                       : 'border-slate-200 bg-white'
                   }`}
                 >
@@ -275,9 +276,12 @@ export default function Home() {
                           isUrgent ? 'text-amber-600' : 'text-slate-500'
                         }`}
                       >
-                        {daysLabel(days)}
+                        {isUrgent && days <= 1 ? (days === 0 ? 'Sett ut søpla NÅ!' : 'Sett ut søpla i kveld!') : daysLabel(days)}
                       </p>
                     </div>
+                    {isUrgent && (
+                      <span className="text-2xl">{days === 0 ? '🚨' : '⏰'}</span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -311,13 +315,13 @@ export default function Home() {
             {!notificationsEnabled ? (
               <button
                 onClick={enableNotifications}
-                className="w-full mt-4 py-3 px-4 bg-slate-900 text-white rounded-xl font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-4 py-3.5 px-4 bg-emerald-600 text-white rounded-2xl font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
                 Aktiver påminnelser
               </button>
             ) : (
-              <div className="mt-4 py-3 px-4 bg-green-50 border border-green-200 rounded-xl text-center text-green-800 text-sm font-medium">
-                Påminnelser er aktivert
+              <div className="mt-4 py-3 px-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center text-emerald-800 text-sm font-medium">
+                Påminnelser er aktivert — vi varsler deg!
               </div>
             )}
             {notificationStatus && !notificationsEnabled && (
@@ -365,22 +369,35 @@ export default function Home() {
 
         {/* Initial empty state */}
         {!selectedAddress && !loading && (
-          <div className="mt-12 text-center text-slate-400">
-            <p className="text-sm">
-              Søk etter adressen din for å se<br />
-              når søppelet ditt hentes.
+          <div className="mt-12 text-center">
+            <p className="text-5xl mb-4">🏠</p>
+            <p className="text-slate-600 font-medium">Skriv inn adressen din</p>
+            <p className="text-sm text-slate-400 mt-1">
+              Så viser vi deg når søppelet hentes<br />
+              og sender deg en påminnelse dagen før!
             </p>
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="text-center text-xs text-slate-400 py-4">
-        Data fra{' '}
-        <a href="https://www.rir.no" className="underline hover:text-slate-600" target="_blank" rel="noopener">
-          rir.no
+      {/* Vipps + Footer */}
+      <div className="text-center pb-4 pt-2 space-y-3">
+        <a
+          href="https://qr.vipps.no/box/db135481-0053-4db4-9760-91adb6a28e46/pay-in"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track({ event: 'vipps' })}
+          className="inline-flex items-center gap-2 bg-[#FF5B24] text-white text-sm font-semibold rounded-2xl px-5 py-2.5 shadow-sm active:opacity-80"
+        >
+          Lik appen? Doner via Vipps
         </a>
-      </footer>
+        <p className="text-xs text-slate-400">
+          Data fra{' '}
+          <a href="https://www.rir.no" className="underline hover:text-slate-600" target="_blank" rel="noopener">
+            rir.no
+          </a>
+        </p>
+      </div>
     </main>
   )
 }

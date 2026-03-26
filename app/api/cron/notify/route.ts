@@ -116,22 +116,43 @@ export async function GET(request: Request) {
 
     for (const col of collections) {
       const days = daysUntil(col.date)
-      const fractionList = col.fractions.join(', ')
+
+      // Short emoji labels for each waste type
+      const emojiMap: Record<string, string> = {
+        restavfall: '🗑️',
+        matavfall: '🥬',
+        papir: '📄',
+        plastemballasje: '♻️',
+        batteri: '🔋',
+        metallemballasje: '🥫',
+        glassemballasje: '🫙',
+      }
+
+      const fractionEmojis = col.fractions
+        .map(f => {
+          const key = f.toLowerCase().trim()
+          return `${emojiMap[key] || '📦'} ${f}`
+        })
+        .join('\n')
+
       const firstKey = col.fractions[0]?.toLowerCase().trim()
       const icon = WASTE_ICONS[firstKey] || undefined
 
+      let title: string | null = null
       let body: string | null = null
 
       if (days === 2) {
-        body = `Hei! Husk at ${formatDateShort(col.date)} er det henting av ${fractionList}.`
+        title = `📅 Henting ${formatDateShort(col.date)}`
+        body = `Husk å gjøre klar:\n${fractionEmojis}`
       } else if (days === 1) {
-        body = `I morgen må søppelet ut! Henting av ${fractionList}.`
+        title = '⏰ Sett ut søpla i kveld!'
+        body = `I morgen hentes:\n${fractionEmojis}`
       }
 
       if (!body) continue
 
       const payload = JSON.stringify({
-        title: 'HuskSøppel',
+        title: title || 'HuskSøppel',
         body,
         icon,
         tag: `reminder-${days}d-${col.date}`,

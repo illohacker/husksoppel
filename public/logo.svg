@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Trash can body -->
+  <rect x="30" y="45" width="60" height="55" rx="8" fill="#0f172a"/>
+  <!-- Trash can lid -->
+  <rect x="25" y="35" width="70" height="12" rx="6" fill="#1e293b"/>
+  <!-- Lid handle -->
+  <rect x="50" y="28" width="20" height="10" rx="5" fill="#334155"/>
+  <!-- Recycling arrows circle -->
+  <circle cx="60" cy="72" r="16" fill="#10b981" opacity="0.9"/>
+  <!-- Checkmark inside -->
+  <path d="M50 72 L57 79 L71 65" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Bell notification badge -->
+  <circle cx="85" cy="38" r="12" fill="#f59e0b"/>
+  <path d="M85 31 C82 31 80 33.5 80 36 L80 39 C78.5 39.5 78 40.5 78 41.5 L92 41.5 C92 40.5 91.5 39.5 90 39 L90 36 C90 33.5 88 31 85 31Z" fill="white"/>
+  <circle cx="85" cy="44" r="1.5" fill="white"/>
+</svg>
