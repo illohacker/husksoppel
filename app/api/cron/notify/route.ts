@@ -117,23 +117,20 @@ export async function GET(request: Request) {
     for (const col of collections) {
       const days = daysUntil(col.date)
 
-      // Short emoji labels for each waste type
-      const emojiMap: Record<string, string> = {
-        restavfall: '🗑️',
-        matavfall: '🥬',
-        papir: '📄',
-        plastemballasje: '♻️',
-        batteri: '🔋',
-        metallemballasje: '🥫',
-        glassemballasje: '🫙',
+      // Compact: emoji + short name, all on one line
+      const shortNames: Record<string, string> = {
+        restavfall: '🗑 Rest',
+        matavfall: '🥬 Mat',
+        papir: '📄 Papir',
+        plastemballasje: '♻️ Plast',
+        batteri: '🔋 Batt',
+        metallemballasje: '🥫 Metall',
+        glassemballasje: '🫙 Glass',
       }
 
-      const fractionEmojis = col.fractions
-        .map(f => {
-          const key = f.toLowerCase().trim()
-          return `${emojiMap[key] || '📦'} ${f}`
-        })
-        .join('\n')
+      const compact = col.fractions
+        .map(f => shortNames[f.toLowerCase().trim()] || f)
+        .join(' · ')
 
       const firstKey = col.fractions[0]?.toLowerCase().trim()
       const icon = WASTE_ICONS[firstKey] || undefined
@@ -143,10 +140,10 @@ export async function GET(request: Request) {
 
       if (days === 2) {
         title = `📅 Henting ${formatDateShort(col.date)}`
-        body = `Husk å gjøre klar:\n${fractionEmojis}`
+        body = compact
       } else if (days === 1) {
         title = '⏰ Sett ut søpla i kveld!'
-        body = `I morgen hentes:\n${fractionEmojis}`
+        body = compact
       }
 
       if (!body) continue
