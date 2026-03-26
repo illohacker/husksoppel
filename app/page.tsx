@@ -47,10 +47,13 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [notificationStatus, setNotificationStatus] = useState<string>('')
+  const [isStandalone, setIsStandalone] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
+  const [showInstallGuide, setShowInstallGuide] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load saved address from localStorage
+  // Load saved address and detect platform
   useEffect(() => {
     const saved = localStorage.getItem('husksoppel-address')
     if (saved) {
@@ -61,6 +64,16 @@ export default function Home() {
     if ('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('husksoppel-push')) {
       setNotificationsEnabled(true)
     }
+
+    // Detect iOS
+    const ua = navigator.userAgent
+    const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    setIsIOS(ios)
+
+    // Detect if running as installed PWA
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as unknown as { standalone?: boolean }).standalone === true
+    setIsStandalone(standalone)
   }, [])
 
   // Fetch calendar when address is selected
@@ -115,8 +128,14 @@ export default function Home() {
   }
 
   async function enableNotifications() {
+    // On iOS, must be installed as PWA first
+    if (isIOS && !isStandalone) {
+      setShowInstallGuide(true)
+      return
+    }
+
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setNotificationStatus('Nettleseren din støtter ikke push-varsler.')
+      setNotificationStatus('Nettleseren din støtter ikke push-varsler. Prøv å legge til appen på hjemskjermen først.')
       return
     }
     if (!selectedAddress) {
@@ -303,6 +322,35 @@ export default function Home() {
             )}
             {notificationStatus && !notificationsEnabled && (
               <p className="text-sm text-slate-500 text-center">{notificationStatus}</p>
+            )}
+
+            {/* iOS Install Guide */}
+            {showInstallGuide && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+                <p className="font-semibold text-blue-900 mb-3">
+                  Legg til på hjemskjermen først
+                </p>
+                <p className="text-sm text-blue-800 mb-3">
+                  For å motta push-varsler på iPhone må du installere appen:
+                </p>
+                <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside mb-3">
+                  <li>
+                    Trykk på <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-100 rounded text-xs font-mono">Del-knappen</span> (firkant med pil opp) nederst i Safari
+                  </li>
+                  <li>
+                    Velg <span className="font-semibold">&quot;Legg til på Hjem-skjerm&quot;</span>
+                  </li>
+                  <li>
+                    Åpne appen fra hjemskjermen og aktiver varsler derfra
+                  </li>
+                </ol>
+                <button
+                  onClick={() => setShowInstallGuide(false)}
+                  className="w-full py-2 text-sm text-blue-700 hover:text-blue-900"
+                >
+                  Lukk
+                </button>
+              </div>
             )}
           </div>
         )}
