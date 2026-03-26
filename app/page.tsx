@@ -127,17 +127,16 @@ export default function Home() {
   }
 
   async function enableNotifications() {
-    if (isIOS && !isStandalone) {
-      setShowInstallGuide(true)
+    if (!selectedAddress) {
+      setNotificationStatus('Velg en adresse først.')
       return
     }
 
-    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setNotificationStatus('Nettleseren din støtter ikke push-varsler. Prøv å legge til appen på hjemskjermen først.')
-      return
-    }
-    if (!selectedAddress) {
-      setNotificationStatus('Velg en adresse først.')
+    const pushSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
+
+    // iOS Safari (not PWA) or any browser without Push support → show install guide
+    if (!pushSupported || (isIOS && !isStandalone)) {
+      setShowInstallGuide(true)
       return
     }
 
@@ -328,26 +327,34 @@ export default function Home() {
               <p className="text-sm text-slate-500 text-center">{notificationStatus}</p>
             )}
 
-            {/* iOS Install Guide */}
+            {/* Install Guide */}
             {showInstallGuide && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
                 <p className="font-semibold text-blue-900 mb-3">
-                  Legg til på hjemskjermen først
+                  Installer appen for varsler
                 </p>
-                <p className="text-sm text-blue-800 mb-3">
-                  For å motta push-varsler på iPhone må du installere appen:
-                </p>
-                <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside mb-3">
-                  <li>
-                    Trykk på <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-100 rounded text-xs font-mono">Del-knappen</span> (firkant med pil opp) nederst i Safari
-                  </li>
-                  <li>
-                    Velg <span className="font-semibold">&quot;Legg til på Hjem-skjerm&quot;</span>
-                  </li>
-                  <li>
-                    Åpne appen fra hjemskjermen og aktiver varsler derfra
-                  </li>
-                </ol>
+                {isIOS ? (
+                  <>
+                    <p className="text-sm text-blue-800 mb-3">
+                      Push-varsler krever at appen er installert på hjemskjermen:
+                    </p>
+                    <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside mb-3">
+                      <li>
+                        Trykk på <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-100 rounded text-xs font-mono">Del-knappen</span> (firkant med pil opp) nederst
+                      </li>
+                      <li>
+                        Velg <span className="font-semibold">&quot;Legg til på Hjem-skjerm&quot;</span>
+                      </li>
+                      <li>
+                        Åpne appen fra hjemskjermen og aktiver varsler
+                      </li>
+                    </ol>
+                  </>
+                ) : (
+                  <p className="text-sm text-blue-800 mb-3">
+                    Nettleseren din støtter ikke push-varsler direkte. Prøv å åpne siden i <span className="font-semibold">Chrome</span> eller <span className="font-semibold">Firefox</span>, eller installer appen på hjemskjermen.
+                  </p>
+                )}
                 <button
                   onClick={() => setShowInstallGuide(false)}
                   className="w-full py-2 text-sm text-blue-700 hover:text-blue-900"
