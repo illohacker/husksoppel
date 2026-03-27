@@ -1,0 +1,299 @@
+{
+  "id": "no.husksoppel",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": ["local"],
+  "brandColor": "#00a86b",
+  "name": {
+    "en": "HuskSøppel",
+    "no": "HuskSøppel"
+  },
+  "description": {
+    "en": "Garbage collection reminders from RIR",
+    "no": "Påminnelser om søppelhenting fra RIR"
+  },
+  "category": ["tools"],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  },
+  "author": {
+    "name": "HuskSøppel"
+  },
+  "capabilities": {
+    "waste_next_date": {
+      "type": "string",
+      "title": {
+        "en": "Next collection",
+        "no": "Neste henting"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/calendar.svg"
+    },
+    "waste_next_types": {
+      "type": "string",
+      "title": {
+        "en": "Waste types",
+        "no": "Avfallstyper"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/trash.svg"
+    },
+    "waste_days_until": {
+      "type": "number",
+      "title": {
+        "en": "Days until collection",
+        "no": "Dager til henting"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "units": {
+        "en": "days",
+        "no": "dager"
+      },
+      "icon": "/assets/clock.svg"
+    }
+  },
+  "drivers": [
+    {
+      "id": "husksoppel",
+      "name": {
+        "en": "Garbage Calendar",
+        "no": "Søppelkalender"
+      },
+      "class": "other",
+      "capabilities": [
+        "waste_next_date",
+        "waste_next_types",
+        "waste_days_until"
+      ],
+      "capabilitiesOptions": {
+        "waste_next_date": {
+          "title": {
+            "en": "Next collection",
+            "no": "Neste henting"
+          }
+        },
+        "waste_next_types": {
+          "title": {
+            "en": "Types",
+            "no": "Typer"
+          }
+        },
+        "waste_days_until": {
+          "title": {
+            "en": "Days left",
+            "no": "Dager igjen"
+          }
+        }
+      },
+      "pair": [
+        {
+          "id": "address",
+          "template": "login_credentials",
+          "options": {
+            "usernameLabel": {
+              "en": "Address ID (from HuskSøppel app)",
+              "no": "Adresse-ID (fra HuskSøppel-appen)"
+            },
+            "usernamePlaceholder": "1579",
+            "passwordLabel": {
+              "en": "Address text",
+              "no": "Adressetekst"
+            },
+            "passwordPlaceholder": "Eidemsbakken 27B, HUSTADVIKA"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "images": {
+        "small": "/drivers/husksoppel/assets/images/small.png",
+        "large": "/drivers/husksoppel/assets/images/large.png"
+      },
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Address settings",
+            "no": "Adresseinnstillinger"
+          },
+          "children": [
+            {
+              "id": "addressId",
+              "type": "text",
+              "label": {
+                "en": "Address ID",
+                "no": "Adresse-ID"
+              },
+              "value": ""
+            },
+            {
+              "id": "addressText",
+              "type": "text",
+              "label": {
+                "en": "Address",
+                "no": "Adresse"
+              },
+              "value": ""
+            },
+            {
+              "id": "pollInterval",
+              "type": "number",
+              "label": {
+                "en": "Update interval (minutes)",
+                "no": "Oppdateringsintervall (minutter)"
+              },
+              "value": 60,
+              "min": 15,
+              "max": 1440
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "flow": {
+    "triggers": [
+      {
+        "id": "collection-tomorrow",
+        "title": {
+          "en": "Waste collection is tomorrow",
+          "no": "Søppelhenting er i morgen"
+        },
+        "tokens": [
+          {
+            "name": "types",
+            "type": "string",
+            "title": {
+              "en": "Waste types",
+              "no": "Avfallstyper"
+            },
+            "example": {
+              "en": "Rest, Mat, Papir",
+              "no": "Rest, Mat, Papir"
+            }
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "title": {
+              "en": "Date",
+              "no": "Dato"
+            },
+            "example": "28.3.26"
+          }
+        ]
+      },
+      {
+        "id": "collection-today",
+        "title": {
+          "en": "Waste collection is today",
+          "no": "Søppelhenting er i dag"
+        },
+        "tokens": [
+          {
+            "name": "types",
+            "type": "string",
+            "title": {
+              "en": "Waste types",
+              "no": "Avfallstyper"
+            },
+            "example": {
+              "en": "Rest, Mat, Papir",
+              "no": "Rest, Mat, Papir"
+            }
+          }
+        ]
+      },
+      {
+        "id": "collection-in-days",
+        "title": {
+          "en": "Collection in X days",
+          "no": "Henting om X dager"
+        },
+        "titleFormatted": {
+          "en": "Collection in [[days]] days",
+          "no": "Henting om [[days]] dager"
+        },
+        "args": [
+          {
+            "type": "number",
+            "name": "days",
+            "min": 1,
+            "max": 7,
+            "step": 1
+          }
+        ],
+        "tokens": [
+          {
+            "name": "types",
+            "type": "string",
+            "title": {
+              "en": "Waste types",
+              "no": "Avfallstyper"
+            }
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "is-collection-tomorrow",
+        "title": {
+          "en": "Collection is tomorrow",
+          "no": "Henting er i morgen"
+        }
+      },
+      {
+        "id": "is-collection-today",
+        "title": {
+          "en": "Collection is today",
+          "no": "Henting er i dag"
+        }
+      },
+      {
+        "id": "has-waste-type",
+        "title": {
+          "en": "Next collection includes waste type",
+          "no": "Neste henting inkluderer avfallstype"
+        },
+        "titleFormatted": {
+          "en": "Next collection includes [[type]]",
+          "no": "Neste henting inkluderer [[type]]"
+        },
+        "args": [
+          {
+            "type": "dropdown",
+            "name": "type",
+            "values": [
+              { "id": "restavfall", "label": { "en": "Residual waste", "no": "Restavfall" } },
+              { "id": "matavfall", "label": { "en": "Food waste", "no": "Matavfall" } },
+              { "id": "papir", "label": { "en": "Paper", "no": "Papir" } },
+              { "id": "plastemballasje", "label": { "en": "Plastic", "no": "Plastemballasje" } },
+              { "id": "batteri", "label": { "en": "Batteries", "no": "Batteri" } },
+              { "id": "metallemballasje", "label": { "en": "Metal", "no": "Metallemballasje" } },
+              { "id": "glassemballasje", "label": { "en": "Glass", "no": "Glassemballasje" } }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

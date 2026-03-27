@@ -1,0 +1,12 @@
+{
+  "name": "no.husksoppel",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "homey app run",
+    "install-app": "homey app install"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
